@@ -1,0 +1,27 @@
+{
+  "name": "@repo/backend-common",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "tsc"
+  },
+  "exports": {
+    "./user": {
+      "types": "./src/types/user.type.ts",
+      "default": "./dist/types/user.type.js"
+    }, 
+    ".": {
+        "types": "./src/index.ts",
+        "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "typescript": "latest"
+  }
+}
