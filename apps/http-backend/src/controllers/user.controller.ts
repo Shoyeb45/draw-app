@@ -1,7 +1,7 @@
 import { Request, Response } from "express" 
-import { userSignupSchema } from "@repo/backend-common/user";
-import { ZodError } from "@repo/backend-common";
+import { ZUserSignup, ZUserSigin } from "@repo/common";
 import prisma from "@repo/db/client";
+import { ZodError } from "@repo/common";
 
 /**
  * Function which will be called when `/api/v1/user/signup` endpoint will be hit  
@@ -9,7 +9,7 @@ import prisma from "@repo/db/client";
 export const signup = async (req: Request, res: Response) => {
     try {
         // parse the body
-        let body = userSignupSchema.parse(req?.body);
+        let body = ZUserSignup.parse(req?.body);
         
         // check if the user is already present
 

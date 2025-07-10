@@ -1,1 +1,4 @@
-export { ZodError } from "zod";
+
+export const config = {
+    jwt_secret: process.env.JWT_SECRET
+}
