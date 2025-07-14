@@ -21,6 +21,7 @@ coverage
 # Vercel
 .vercel
 
+
 # Build Outputs
 .next/
 out/
@@ -36,3 +37,6 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+
+**/*.log

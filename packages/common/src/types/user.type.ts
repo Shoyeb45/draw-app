@@ -1,7 +1,6 @@
 import  { z } from "zod";
 
-export const ZUserSignup = z.object({
-    name: z.string().min(3),
+export const ZUser = z.object({
     email: z.string().email(),
     password: z.string().min(5).max(20)
         .refine((password) => {
@@ -21,10 +20,6 @@ export const ZUserSignup = z.object({
 });
 
 
-export const ZUserSigin = z.object({
-    email: z.string().email(),
-    password: z.string()
-});
 
-export type TUserSignin = z.infer<typeof ZUserSigin>;
-export type TUserSignup =  z.infer<typeof ZUserSignup>;
+
+export type TUser =  z.infer<typeof ZUser>;
