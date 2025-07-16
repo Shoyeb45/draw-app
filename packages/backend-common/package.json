@@ -6,10 +6,6 @@
     "build": "tsc"
   },
   "exports": {
-    "./user": {
-      "types": "./src/types/user.type.ts",
-      "default": "./dist/types/user.type.js"
-    },
     ".": {
       "types": "./src/index.ts",
       "default": "./dist/index.js"
