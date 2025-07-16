@@ -1,10 +1,11 @@
-import { Request, Response } from "express" 
+import { Request, Response } from "express"
 import { ZUser } from "@repo/common";
 import prisma from "@repo/db/client";
 import { ZodError } from "@repo/common";
-import bcryptjs, { hash } from  "bcryptjs";
+import bcryptjs, { hash } from "bcryptjs";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwtUtils";
 import { logger } from "../utils/loggeer";
+import { StatusCodes } from "http-status-codes";
 
 /**
  * Function which will be called when `/api/v1/user/signup` endpoint will be hit  
@@ -29,19 +30,23 @@ export const signup = async (req: Request, res: Response) => {
             })
             return;
         }
-        
+
         // Hash the password
-        const hashedPassword  = await bcryptjs.hash(body.password, 10);
-        
+        const hashedPassword = await bcryptjs.hash(body.password, 10);
+
         // update the database
         const dbUser = await prisma.user.create({
             data: {
                 email: body.email,
                 password: hashedPassword
             },
+            select: {
+                id: true,
+                email: true
+            }
         });
-        
-        
+
+
         // database couldn't updated
         if (!dbUser) {
             logger.warn("Failed to create enw user in db")
@@ -58,7 +63,7 @@ export const signup = async (req: Request, res: Response) => {
             user: dbUser
         })
     } catch (error) {
-        if(error instanceof ZodError){
+        if (error instanceof ZodError) {
             logger.error("Zod error in signup")
             logger.error(error)
             res.status(500).json({
@@ -69,10 +74,10 @@ export const signup = async (req: Request, res: Response) => {
         }
         if (error instanceof Error) {
             logger.error("Error in signup while creating new user")
-            logger.error(error)
+            logger.error(error.message)
             res.status(500).json({
                 "success": false,
-                "error": "Internal server error occurred"             
+                "error": "Internal server error occurred"
             })
             return;
         }
@@ -97,7 +102,7 @@ export const signin = async (req: Request, res: Response) => {
             }
         });
 
-        
+
         if (!user) {
             logger.warn("User not found, so not logging in...")
             res.status(404).json({
@@ -110,7 +115,7 @@ export const signin = async (req: Request, res: Response) => {
         // compare the password
         const isPasswordTrue = await bcryptjs.compare(body.password, user.password);
 
-        
+
         if (!isPasswordTrue) {
             logger.warn("Password did not match while logging in")
             res.status(401).json({
@@ -122,14 +127,37 @@ export const signin = async (req: Request, res: Response) => {
         // generate jwt
         const accessToken = generateAccessToken(user.id, user.email, user.name);
         const refreshToken = generateRefreshToken(user.id);
+
+        const updatedUser = await prisma.user.update({
+            data: { 
+                refreshToken: refreshToken
+            },
+            where: {
+                email: body.email
+            }
+        })
         
+        if (!updatedUser) {
+            logger.error("Failed to update the refresh token of the user");
+            res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                "success": false,
+                "message": "Failed to update the refresh token of the user"
+            });
+            return;
+        }
         // set the cookies
         res
-            .cookie("token", accessToken, option) 
+            .cookie("token", accessToken, {
+                httpOnly: true,
+                secure: true,
+                sameSite: "none",
+                path: "/"
+            })
             .status(200)
             .json({
                 "success": true,
-                "message": "User logged in succesfully"
+                "message": "User logged in succesfully",
+                "userId": updatedUser.id
             })
         return;
     } catch (error) {
@@ -150,7 +178,7 @@ export const signin = async (req: Request, res: Response) => {
             })
             return;
         }
-        
+
         res.status(500).json({
             "success": false,
             "error": "Internal Server error"
@@ -159,14 +187,3 @@ export const signin = async (req: Request, res: Response) => {
 }
 
 
-export const createRoom = async (req: Request, res: Response) => {
-    try {
-        // autheticated user
-
-        // create a room
-
-        // send the response
-    } catch (error) {
-        
-    }
-}
