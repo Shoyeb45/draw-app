@@ -39,22 +39,8 @@ export async function verify(request: Request, response: Response, next: NextFun
             return;
         }
 
-        // find user in database
-        const user = await prisma.user.findUnique({
-            where: {
-                id: decodedToken.id
-            }
-        })
-
-        if (!user) {
-            logger.warn("No user found, so invalid access token");
-            response.status(StatusCodes.UNAUTHORIZED).json({
-                "success": true,
-                "message": "Invald access token, unauthorised user"
-            })
-        }
-
-        request.user = user;
+    
+        request.id = decodedToken.id;
         next();
     } catch (error) {
         if (error instanceof Error) {
