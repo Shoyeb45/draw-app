@@ -10,7 +10,8 @@ wss.on("connection", (ws, request) => {
     const userId = verifyUser(token);
 
     if (!userId) {
-        console.log("Failed to verify user")
+        console.log("Failed to verify user");
+        ws.close(); 
         return null;
     }
     ws.on('message', (data, isBinary) => {
