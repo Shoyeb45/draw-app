@@ -1,9 +1,27 @@
 "use client";
 
+
+
+type Shape = {
+    type: "rect",
+    x: number,
+    y: number,
+    width: number,
+    height: number
+} | {
+    type: "circle",
+    x: number,
+    y: number,
+    radius: number,
+};
+
+import { useState } from "react";
 import { useEffect } from "react";
 import { useRef } from "react";
+import { initDraw } from "../draw";
 
 export function Whiteboard() {
+    const [shapes, setShape] = useState<Shape[]>([]);
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
@@ -11,15 +29,10 @@ export function Whiteboard() {
         if (!canvas) {
             return;
         }
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-            return;
-        }
-
-        ctx.strokeRect(0, 0, 123, 123);
+        initDraw(canvas, shapes);
     }, [canvasRef])
 
     return <div>
-        <canvas height={600} width={600} ref={canvasRef}></canvas>
+        <canvas ref={canvasRef} height={1200} width={1200}></canvas>
     </div>
 }
