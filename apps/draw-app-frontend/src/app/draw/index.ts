@@ -1,6 +1,47 @@
 import { Shape } from "@/types/shapeType";
 import { initInfiniteCanvas, screenToWorldX, screenToWorldY, applyTransform } from "./infiniteCanvas";
-import { act } from "react";
+
+const ARROW_ANGLE = Math.PI / 6;
+const ARROW_LENGTH = 10;
+
+/**
+ * Draws an arrow from (x1, y1) to (x2, y2) with an arrowhead.
+ */
+function drawArrow(
+    ctx: CanvasRenderingContext2D,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    scale: number
+) {
+    const headLength = ARROW_LENGTH; // Size of arrowhead (in world units)
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const angle = Math.atan2(dy, dx);
+
+    // Draw main line (without arrowhead)
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+
+    // Draw arrowhead
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(
+        x2 - headLength * Math.cos(angle - Math.PI / 6),
+        y2 - headLength * Math.sin(angle - Math.PI / 6)
+    );
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(
+        x2 - headLength * Math.cos(angle + Math.PI / 6),
+        y2 - headLength * Math.sin(angle + Math.PI / 6)
+    );
+    // ctx.closePath();
+    ctx.stroke();
+    // ctx.fill(); // Optional: fill the arrowhead
+}
 
 export function initDraw(
     canvas: HTMLCanvasElement,
@@ -77,6 +118,17 @@ export function initDraw(
                 endY: endY
             }
             setShapes((prev: Shape[]) => [...prev, newShape]);
+        } else if (activeShape === "arrow") {
+            const newShape: Shape = {
+                type: "arrow",
+                startX: startX,
+                startY: startY,
+                endX: endX,
+                endY: endY
+            }
+            setShapes((prev: Shape[]) => [...prev, newShape]);
+        } else {
+            redraw(canvas, shapes, scale);
         }
     };
 
@@ -115,11 +167,20 @@ export function initDraw(
             ctx.lineTo(currentX, currentY);
             // ctx.closePath();
             ctx.stroke();
+        } else if (activeShape === "arrow") {
+            drawArrow(ctx, startX, startY, currentX, currentY, scale);
+        } else {
+            ctx.setLineDash([4]);
+            ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
+            
+            ctx.fillRect(startX, startY, currentX - startX, currentY - startY);
+            ctx.strokeRect(startX, startY, currentX - startX, currentY - startY);
+            
         }
-
+        
         ctx.restore();
     };
-
+    
     canvas.addEventListener("mousedown", handleMouseDown);
     canvas.addEventListener("mouseup", handleMouseUp);
     canvas.addEventListener("mousemove", handleMouseMove);
@@ -159,6 +220,8 @@ function redraw(canvas: HTMLCanvasElement, shapes: Shape[], scale: number) {
             ctx.moveTo(shape.startX, shape.startY);
             ctx.lineTo(shape.endX, shape.endY);
             ctx.stroke();
+        } else if (shape.type === "arrow") {
+            drawArrow(ctx, shape.startX, shape.startY, shape.endX, shape.endY, scale);
         }
     });
 

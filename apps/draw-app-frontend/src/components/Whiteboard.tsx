@@ -22,12 +22,12 @@ type Shape = {
 
 export function Whiteboard() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const { shapes, setShapes, shape, scale, setScale } = useShapeContext();
+    const { shapes, setShapes, shape, scale, setScale, setCursorType, cursorType } = useShapeContext();
 
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
-
+        canvas.style.cursor = cursorType;
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
@@ -37,7 +37,7 @@ export function Whiteboard() {
         return () => {
             if (cleanup) cleanup();
         };
-    }, [canvasRef, shape, shapes, scale]);
+    }, [canvasRef, shape, shapes, scale, cursorType]);
 
 
     return <div>
