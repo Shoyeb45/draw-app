@@ -9,7 +9,9 @@ type ContextType = {
     shape: string,
     setShape: (shape: string) => void,
     isDrawingShape: boolean,
-    setIsDrawingShape: React.Dispatch<React.SetStateAction<boolean>>
+    setIsDrawingShape: React.Dispatch<React.SetStateAction<boolean>>,
+    scale: number,
+    setScale: React.Dispatch<React.SetStateAction<number>>
 }
 
 
@@ -23,10 +25,10 @@ export const ContextProvider = ({ children }: ContextProviderProps) => {
     const [shapes, setShapes] = useState<Shape[]>([]);
     const [shape, setShape] = useState<string>("");
     const [isDrawingShape, setIsDrawingShape] = useState<boolean>(false);
-
+    const [scale, setScale] = useState<number>(1);
 
     return (
-        <Context.Provider value={{ shapes, setShapes, shape, setShape, isDrawingShape, setIsDrawingShape}}>
+        <Context.Provider value={{ shapes, setShapes, shape, setShape, isDrawingShape, setIsDrawingShape, scale, setScale}}>
             {children}
         </Context.Provider>
     )

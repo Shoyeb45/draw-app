@@ -5,7 +5,6 @@ import { useShapeContext } from "@/context/store";
 import { useContext, useEffect, useRef, useState } from "react";
 
 
-
 type Shape = {
     type: "rect",
     x: number,
@@ -23,7 +22,7 @@ type Shape = {
 
 export function Whiteboard() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const { shapes, setShapes, shape } = useShapeContext();
+    const { shapes, setShapes, shape, scale, setScale } = useShapeContext();
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -33,12 +32,12 @@ export function Whiteboard() {
         canvas.height = window.innerHeight;
 
         
-        const cleanup = initDraw(canvas, shapes, setShapes, shape);
+        const cleanup = initDraw(canvas, shapes, setShapes, shape, scale, setScale);
 
         return () => {
             if (cleanup) cleanup();
         };
-    }, [canvasRef, shape, shapes]);
+    }, [canvasRef, shape, shapes, scale]);
 
 
     return <div>
