@@ -11,7 +11,9 @@ type ContextType = {
     cursorType: string,
     setCursorType: React.Dispatch<React.SetStateAction<string>>,
     scale: number,
-    setScale: React.Dispatch<React.SetStateAction<number>>
+    setScale: React.Dispatch<React.SetStateAction<number>>,
+    selectedShapes: Shape[],
+    setSelectedShapes: React.Dispatch<React.SetStateAction<Shape[]>>
 }
 
 
@@ -26,9 +28,10 @@ export const ContextProvider = ({ children }: ContextProviderProps) => {
     const [shape, setShape] = useState<string>("");
     const [cursorType, setCursorType] = useState<string>("default");
     const [scale, setScale] = useState<number>(1);
+    const [selectedShapes, setSelectedShapes] = useState<Shape[]>([]);
 
     return (
-        <Context.Provider value={{ shapes, setShapes, shape, setShape, cursorType, setCursorType, scale, setScale}}>
+        <Context.Provider value={{ setSelectedShapes, selectedShapes, shapes, setShapes, shape, setShape, cursorType, setCursorType, scale, setScale }}>
             {children}
         </Context.Provider>
     )

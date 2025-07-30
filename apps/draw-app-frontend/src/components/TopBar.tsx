@@ -23,6 +23,10 @@ export function Topbar() {
                 setCursorType("crosshair");
             }}>Arrow</button>
             <button className="bg-yellow-500 p-2 rounded-xl" onClick={(e) => {
+                setShape("draw");
+                setCursorType("crosshair");
+            }}>Draw</button>
+            <button className="bg-yellow-500 p-2 rounded-xl" onClick={(e) => {
                 setShape("");
                 setCursorType("default");
             }}>Select</button>

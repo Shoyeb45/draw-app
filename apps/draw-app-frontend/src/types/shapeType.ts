@@ -22,4 +22,12 @@ export type Shape = {
     startY: number,
     endX: number,
     endY: number
+} | {
+    type: "draw",
+    points: Point[]
 };
+
+
+export type Point = {
+    x: number, y: number, drag?: boolean
+}

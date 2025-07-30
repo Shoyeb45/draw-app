@@ -1,5 +1,8 @@
 import { Shape } from "@/types/shapeType";
 import { initInfiniteCanvas, screenToWorldX, screenToWorldY, applyTransform } from "./infiniteCanvas";
+import { Point } from "@/types/shapeType";
+import { PureComponent } from "react";
+import { pid } from "process";
 
 const ARROW_ANGLE = Math.PI / 6;
 const ARROW_LENGTH = 10;
@@ -30,13 +33,13 @@ function drawArrow(
     ctx.beginPath();
     ctx.moveTo(x2, y2);
     ctx.lineTo(
-        x2 - headLength * Math.cos(angle - Math.PI / 6),
-        y2 - headLength * Math.sin(angle - Math.PI / 6)
+        x2 - headLength * Math.cos(angle - ARROW_ANGLE),
+        y2 - headLength * Math.sin(angle - ARROW_ANGLE)
     );
     ctx.moveTo(x2, y2);
     ctx.lineTo(
-        x2 - headLength * Math.cos(angle + Math.PI / 6),
-        y2 - headLength * Math.sin(angle + Math.PI / 6)
+        x2 - headLength * Math.cos(angle + ARROW_ANGLE),
+        y2 - headLength * Math.sin(angle + ARROW_ANGLE)
     );
     // ctx.closePath();
     ctx.stroke();
@@ -49,7 +52,9 @@ export function initDraw(
     setShapes: React.Dispatch<React.SetStateAction<Shape[]>>,
     activeShape: string,
     scale: number,
-    setScale: (s: number) => void
+    setScale: (s: number) => void,
+    selectedShapes: Shape[],
+    setSelectedShapes: React.Dispatch<React.SetStateAction<Shape[]>>,
 ) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return () => { };
@@ -59,19 +64,21 @@ export function initDraw(
         { current: canvas },
         scale,
         setScale,
-        () => redraw(canvas, shapes, scale)
+        () => redraw(canvas, shapes, scale, selectedShapes)
     );
 
     // Resize handler
     const resizeCanvas = () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        redraw(canvas, shapes, scale);
+        redraw(canvas, shapes, scale, selectedShapes);
     };
     window.addEventListener("resize", resizeCanvas);
 
     let isDrawing = false;
     let startX = 0, startY = 0;
+    let tempPoints: Point[] = [];
+
 
     const handleMouseDown = (e: MouseEvent) => {
         if (isPanning() || isTouchPanning()) return;
@@ -79,6 +86,11 @@ export function initDraw(
         const rect = canvas.getBoundingClientRect();
         startX = screenToWorldX(e.clientX - rect.left, scale);
         startY = screenToWorldY(e.clientY - rect.top, scale);
+        if (activeShape === "draw") {
+            tempPoints.push({
+                x: startX, y: startY, drag: false
+            })
+        }
     };
 
     const handleMouseUp = (e: MouseEvent) => {
@@ -87,7 +99,11 @@ export function initDraw(
         const rect = canvas.getBoundingClientRect();
         const endX = screenToWorldX(e.clientX - rect.left, scale);
         const endY = screenToWorldY(e.clientY - rect.top, scale);
-
+        
+        if (canvas.style.cursor === "grabbing") {
+            canvas.style.cursor = activeShape === "" ? "default": "crosshair";
+            return;
+        }
         if (activeShape === "rect") {
             setShapes((prev) => [
                 ...prev,
@@ -127,8 +143,64 @@ export function initDraw(
                 endY: endY
             }
             setShapes((prev: Shape[]) => [...prev, newShape]);
+        } else if (activeShape === "draw") {
+            const newShape: Shape = {
+                type: "draw",
+                points: tempPoints
+            }
+            setShapes((prev: Shape[]) => [...prev, newShape]);
+            tempPoints = [];
         } else {
-            redraw(canvas, shapes, scale);
+
+            // Normalize selection box
+            const x1 = Math.min(startX, endX);
+            const y1 = Math.min(startY, endY);
+            const x2 = Math.max(startX, endX);
+            const y2 = Math.max(startY, endY);
+
+            const tempSelectedShapes = shapes.filter((shape) => {
+                let left, top, right, bottom;
+
+                if (shape.type === "rect") {
+                    left = shape.x;
+                    top = shape.y;
+                    right = shape.x + shape.width;
+                    bottom = shape.y + shape.height;
+                } else if (shape.type === "ellipse") {
+                    left = shape.x - shape.radiusX;
+                    top = shape.y - shape.radiusY;
+                    right = shape.x + shape.radiusX;
+                    bottom = shape.y + shape.radiusY;
+                } else if (shape.type === "line" || shape.type === "arrow") {
+                    left = Math.min(shape.startX, shape.endX);
+                    top = Math.min(shape.startY, shape.endY);
+                    right = Math.max(shape.startX, shape.endX);
+                    bottom = Math.max(shape.startY, shape.endY);
+                } else if (shape.type === "draw") {
+                    if (shape.points.length <= 0) {
+                        return false;
+                    }
+                    let startX = shape.points[0].x, startY = shape.points[0].y; 
+                    let endX = shape.points[shape.points.length - 1].x, endY = shape.points[shape.points.length - 1].y;
+                    left = Math.min(startX, endX);
+                    top = Math.min(startY, endY);
+                    right = Math.max(startX, endX);
+                    bottom = Math.max(startY, endY);
+                } else {
+                    return false; // Unknown shape
+                }
+
+                // Check if bounding boxes intersect
+                return left >= x1 &&
+                    top >= y1 &&
+                    right <= x2 &&
+                    bottom <= y2;
+            });
+
+            setSelectedShapes(tempSelectedShapes);
+            console.log(tempSelectedShapes);
+            
+            redraw(canvas, shapes, scale, selectedShapes);
         }
     };
 
@@ -138,7 +210,11 @@ export function initDraw(
         const currentX = screenToWorldX(e.clientX - rect.left, scale);
         const currentY = screenToWorldY(e.clientY - rect.top, scale);
 
-        redraw(canvas, shapes, scale);
+        redraw(canvas, shapes, scale, selectedShapes);
+        
+        if (canvas.style.cursor === "grabbing") {
+            return;
+        }
 
         ctx.save();
         applyTransform(ctx, scale);
@@ -169,18 +245,22 @@ export function initDraw(
             ctx.stroke();
         } else if (activeShape === "arrow") {
             drawArrow(ctx, startX, startY, currentX, currentY, scale);
+        
+        } else if (activeShape === "draw") {
+            tempPoints.push({ x: currentX, y: currentY, drag: true });
+            drawFreeHandDrawing(ctx, tempPoints); // draw entire drawing
         } else {
-            ctx.setLineDash([4]);
+            ctx.setLineDash([4 / scale]);
             ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
-            
+
             ctx.fillRect(startX, startY, currentX - startX, currentY - startY);
             ctx.strokeRect(startX, startY, currentX - startX, currentY - startY);
-            
+
         }
-        
+
         ctx.restore();
     };
-    
+
     canvas.addEventListener("mousedown", handleMouseDown);
     canvas.addEventListener("mouseup", handleMouseUp);
     canvas.addEventListener("mousemove", handleMouseMove);
@@ -196,7 +276,23 @@ export function initDraw(
     };
 }
 
-function redraw(canvas: HTMLCanvasElement, shapes: Shape[], scale: number) {
+function drawFreeHandDrawing(ctx: CanvasRenderingContext2D, points: Point[]) {
+    for (let i = 0; i < points.length; i++) {
+        ctx.beginPath();
+        
+        if (points[i].drag && i) {
+            ctx.moveTo(points[i - 1].x, points[i - 1].y);
+        } else {
+            ctx.moveTo(points[i].x - 1, points[i].y);
+        }
+        ctx.lineTo(points[i].x, points[i].y);
+        ctx.closePath();
+        ctx.stroke();
+    }
+
+}
+
+function redraw(canvas: HTMLCanvasElement, shapes: Shape[], scale: number, selectedShapes: Shape[]) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -222,9 +318,19 @@ function redraw(canvas: HTMLCanvasElement, shapes: Shape[], scale: number) {
             ctx.stroke();
         } else if (shape.type === "arrow") {
             drawArrow(ctx, shape.startX, shape.startY, shape.endX, shape.endY, scale);
+        } else if (shape.type === "draw") {
+            drawFreeHandDrawing(ctx, shape.points);
         }
     });
 
+    // highlight selected shapes, if any
+    if (selectedShapes.length >= 1) {
+        if (selectedShapes.length === 1) {
+            // only one shape selected
+        } else {
+            // multiple shapes selected
+        }
+    }
     ctx.restore();
 }
 

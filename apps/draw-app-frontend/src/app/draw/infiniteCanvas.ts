@@ -70,7 +70,7 @@ export function initInfiniteCanvas(
     const canvas = canvasRef.current;
     if (!canvas) return () => { };
 
-    const rect = canvas.getBoundingClientRect;
+    const rect = canvas.getBoundingClientRect();
 
     const handleWheel = (e: WheelEvent) => {
         e.preventDefault();
@@ -102,6 +102,8 @@ export function initInfiniteCanvas(
     const handleMouseDown = (e: MouseEvent) => {
         if (e.button === 1 || e.button === 2 || (e.button === 0 && keysPressed.has(" "))) {
             e.preventDefault();
+            console.log("Hello Came here");
+            
             isPanning = true;
             const r = canvas.getBoundingClientRect();
             panStartX = e.clientX - r.left;
@@ -125,10 +127,10 @@ export function initInfiniteCanvas(
         }
     };
 
-    const handleMouseUp = () => {
+    const handleMouseUp = (e: MouseEvent) => {
         if (isPanning) {
             isPanning = false;
-            canvas.style.cursor = keysPressed.has(" ") ? "grab" : "default";
+            // canvas.style.cursor = e.button === 1 || e.button === 2 || (e.button === 0 && keysPressed.has(" ")) ? "grabbing" : "default";
         }
     };
 
@@ -136,7 +138,7 @@ export function initInfiniteCanvas(
         if (e.touches.length === 2) {
             e.preventDefault();
             isTouchPanning = true;
-            const r = rect();
+            const r = canvas.getBoundingClientRect();
             let x = 0, y = 0;
             for (let i = 0; i < e.touches.length; i++) {
                 x += e.touches[i].clientX - r.left;
@@ -149,7 +151,7 @@ export function initInfiniteCanvas(
     const handleTouchMove = (e: TouchEvent) => {
         if (e.touches.length === 2 && isTouchPanning) {
             e.preventDefault();
-            const r = rect();
+            const r = canvas.getBoundingClientRect();
             let x = 0, y = 0;
             for (let i = 0; i < e.touches.length; i++) {
                 x += e.touches[i].clientX - r.left;
