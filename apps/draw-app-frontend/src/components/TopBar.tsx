@@ -2,7 +2,7 @@
 import { useShapeContext } from "@/context/store"
 
 export function Topbar() {
-    const { shape, setShape, setCursorType } = useShapeContext();
+    const { setShape, setCursorType } = useShapeContext();
 
     return (
         <div className="absolute text-white flex gap-3">
@@ -26,6 +26,10 @@ export function Topbar() {
                 setShape("draw");
                 setCursorType("crosshair");
             }}>Draw</button>
+            <button className="bg-yellow-500 p-2 rounded-xl" onClick={(e) => {
+                setShape("text");
+                setCursorType("crosshair");
+            }}>Text</button>
             <button className="bg-yellow-500 p-2 rounded-xl" onClick={(e) => {
                 setShape("");
                 setCursorType("default");

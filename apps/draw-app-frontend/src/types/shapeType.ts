@@ -25,6 +25,11 @@ export type Shape = {
 } | {
     type: "draw",
     points: Point[]
+} | {
+    type: "text",
+    x: number,
+    y: number,
+    content: string
 };
 
 

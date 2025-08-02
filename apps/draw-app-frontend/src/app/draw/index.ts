@@ -1,7 +1,7 @@
 import { Shape } from "@/types/shapeType";
 import { initInfiniteCanvas, screenToWorldX, screenToWorldY, applyTransform } from "./infiniteCanvas";
 import { Point } from "@/types/shapeType";
-import { PureComponent } from "react";
+import { act, PureComponent } from "react";
 import { pid } from "process";
 
 const ARROW_ANGLE = Math.PI / 6;
@@ -56,8 +56,10 @@ export function initDraw(
     selectedShapes: Shape[],
     setSelectedShapes: React.Dispatch<React.SetStateAction<Shape[]>>,
 ) {
+
     const ctx = canvas.getContext("2d");
     if (!ctx) return () => { };
+
 
     // Initialize infinite canvas
     const cleanupInfinite = initInfiniteCanvas(
@@ -67,6 +69,73 @@ export function initDraw(
         () => redraw(canvas, shapes, scale, selectedShapes)
     );
 
+    const addTextInput = function (screenX: number, screenY: number) {
+        const rect = canvas.getBoundingClientRect();
+        const worldX = screenToWorldX(screenX - rect.left, scale);
+        const worldY = screenToWorldY(screenY - rect.top, scale);
+
+        const input = document.createElement("textarea");
+        input.className =
+            "canvas-text-input py-0.5 absolute bg-transparent text-white border-none rounded font-sans text-base outline-none min-w-[100px] resize-none overflow-hidden z-10";
+        input.style.left = screenX + "px";
+        input.style.top = screenY + "px";
+        input.style.transform = `scale(${scale})`;
+        input.style.transformOrigin = "top left";
+        input.placeholder = "";
+        input.value = ""; // start empty
+        input.rows = 1;
+
+        canvas.parentElement?.appendChild(input);
+        input.focus();
+
+        autoResizeTextarea(input);
+
+        // Resize as user types
+        input.addEventListener("input", () => {
+            autoResizeTextarea(input);
+        });
+
+        // Finish editing on Enter (without Shift) or blur
+        const finishEditing = () => {
+            if (input.value.trim()) {
+                const newShape: Shape = {
+                    type: "text",
+                    x: worldX,
+                    y: worldY,
+                    content: input.value,
+                };
+                setShapes((prev) => [...prev, newShape]);
+            }
+            input.remove();
+        };
+
+        input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                finishEditing();
+            } else if (e.key === "Escape") {
+                input.remove();
+            }
+        });
+
+        input.addEventListener("blur", () => {
+            // Delay removal to allow click detection
+            setTimeout(finishEditing, 100);
+        });
+    };
+    const autoResizeTextarea = function (textarea: HTMLTextAreaElement) {
+        textarea.style.height = "auto";
+        textarea.style.height = textarea.scrollHeight + "px";
+
+        ctx.font = "16px Cascadia Code, Chalkboard SE, sans-serif";
+        ctx.textAlign = "center";
+        ctx.letterSpacing = "1px"
+        const lines = textarea.value.split("\n");
+        const maxWidth = Math.max(
+            ...lines.map((line) => ctx.measureText(line).width)
+        );
+        textarea.style.width = Math.max(100, maxWidth + 20) + "px";
+    }
     // Resize handler
     const resizeCanvas = () => {
         canvas.width = window.innerWidth;
@@ -93,15 +162,16 @@ export function initDraw(
         }
     };
 
+
     const handleMouseUp = (e: MouseEvent) => {
         if (!isDrawing) return;
         isDrawing = false;
         const rect = canvas.getBoundingClientRect();
         const endX = screenToWorldX(e.clientX - rect.left, scale);
         const endY = screenToWorldY(e.clientY - rect.top, scale);
-        
+
         if (canvas.style.cursor === "grabbing") {
-            canvas.style.cursor = activeShape === "" ? "default": "crosshair";
+            canvas.style.cursor = activeShape === "" ? "default" : "crosshair";
             return;
         }
         if (activeShape === "rect") {
@@ -180,7 +250,7 @@ export function initDraw(
                     if (shape.points.length <= 0) {
                         return false;
                     }
-                    let startX = shape.points[0].x, startY = shape.points[0].y; 
+                    let startX = shape.points[0].x, startY = shape.points[0].y;
                     let endX = shape.points[shape.points.length - 1].x, endY = shape.points[shape.points.length - 1].y;
                     left = Math.min(startX, endX);
                     top = Math.min(startY, endY);
@@ -199,7 +269,7 @@ export function initDraw(
 
             setSelectedShapes(tempSelectedShapes);
             console.log(tempSelectedShapes);
-            
+
             redraw(canvas, shapes, scale, selectedShapes);
         }
     };
@@ -211,7 +281,7 @@ export function initDraw(
         const currentY = screenToWorldY(e.clientY - rect.top, scale);
 
         redraw(canvas, shapes, scale, selectedShapes);
-        
+
         if (canvas.style.cursor === "grabbing") {
             return;
         }
@@ -245,11 +315,11 @@ export function initDraw(
             ctx.stroke();
         } else if (activeShape === "arrow") {
             drawArrow(ctx, startX, startY, currentX, currentY, scale);
-        
+
         } else if (activeShape === "draw") {
             tempPoints.push({ x: currentX, y: currentY, drag: true });
-            drawFreeHandDrawing(ctx, tempPoints); // draw entire drawing
-        } else {
+            drawFreeHandDrawing(ctx, tempPoints); // draw entire drawing till now
+        } else if (activeShape === "") {
             ctx.setLineDash([4 / scale]);
             ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
 
@@ -261,10 +331,24 @@ export function initDraw(
         ctx.restore();
     };
 
+    const handleMouseClick = (e: MouseEvent) => {
+        if (activeShape === "text") {
+            addTextInput(e.clientX, e.clientY);
+        }
+    }
+
+    const handleMouseDoubleClick = (e: MouseEvent) => {
+        console.log("Hi");
+
+        addTextInput(e.clientX, e.clientY);
+    }
+
+
     canvas.addEventListener("mousedown", handleMouseDown);
     canvas.addEventListener("mouseup", handleMouseUp);
     canvas.addEventListener("mousemove", handleMouseMove);
-
+    canvas.addEventListener("click", handleMouseClick);
+    canvas.addEventListener("dblclick", handleMouseDoubleClick);
     resizeCanvas();
 
     return () => {
@@ -273,13 +357,16 @@ export function initDraw(
         canvas.removeEventListener("mousedown", handleMouseDown);
         canvas.removeEventListener("mouseup", handleMouseUp);
         canvas.removeEventListener("mousemove", handleMouseMove);
+        canvas.removeEventListener("click", handleMouseClick);
+        canvas.removeEventListener("dblclick", handleMouseDoubleClick);
     };
 }
 
 function drawFreeHandDrawing(ctx: CanvasRenderingContext2D, points: Point[]) {
     for (let i = 0; i < points.length; i++) {
         ctx.beginPath();
-        
+        ctx.lineJoin = "round";
+
         if (points[i].drag && i) {
             ctx.moveTo(points[i - 1].x, points[i - 1].y);
         } else {
@@ -320,6 +407,13 @@ function redraw(canvas: HTMLCanvasElement, shapes: Shape[], scale: number, selec
             drawArrow(ctx, shape.startX, shape.startY, shape.endX, shape.endY, scale);
         } else if (shape.type === "draw") {
             drawFreeHandDrawing(ctx, shape.points);
+        } else if (shape.type === "text") {
+            ctx.font = `16px Cascadia Code, Chalkboard SE, sans-serif`;
+            ctx.fillStyle = "white";
+            ctx.textAlign = "left";
+            ctx.letterSpacing = "2px"
+            ctx.textBaseline = "top";
+            ctx.fillText(shape.content, shape.x, shape.y);
         }
     });
 

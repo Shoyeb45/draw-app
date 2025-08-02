@@ -180,14 +180,14 @@ export function initInfiniteCanvas(
             canvas.style.cursor = "grab";
         }
 
-        if (
-            ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "w", "a", "s", "d"].includes(
-                e.key.toLowerCase()
-            ) &&
-            !panAnimationId
-        ) {
-            panAnimationId = requestAnimationFrame(performKeyboardPan);
-        }
+        // if (
+        //     ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "w", "a", "s", "d"].includes(
+        //         e.key.toLowerCase()
+        //     ) &&
+        //     !panAnimationId
+        // ) {
+        //     panAnimationId = requestAnimationFrame(performKeyboardPan);
+        // }
 
         // Reset view
         if (e.altKey && (e.key === "r" || e.key === "R")) {
@@ -198,7 +198,7 @@ export function initInfiniteCanvas(
         }
 
         // Fit to content
-        if (e.key === "f" || e.key === "f") {
+        if (e.altKey && (e.key === "f" || e.key === "f")) {
             fitToContent(canvas, redraw, scale, setScale);
         }
 
@@ -237,27 +237,27 @@ export function initInfiniteCanvas(
         }
     };
 
-    const performKeyboardPan = () => {
-        let dx = 0, dy = 0;
-        const speed = 20;
+    // const performKeyboardPan = () => {
+    //     let dx = 0, dy = 0;
+    //     const speed = 20;
 
-        if (keysPressed.has("ArrowLeft") || keysPressed.has("a")) dx -= speed;
-        if (keysPressed.has("ArrowRight") || keysPressed.has("d")) dx += speed;
-        if (keysPressed.has("ArrowUp") || keysPressed.has("w")) dy -= speed;
-        if (keysPressed.has("ArrowDown") || keysPressed.has("s")) dy += speed;
+    //     // if (keysPressed.has("ArrowLeft") || keysPressed.has("a")) dx -= speed;
+    //     // if (keysPressed.has("ArrowRight") || keysPressed.has("d")) dx += speed;
+    //     // if (keysPressed.has("ArrowUp") || keysPressed.has("w")) dy -= speed;
+    //     // if (keysPressed.has("ArrowDown") || keysPressed.has("s")) dy += speed;
 
-        if (dx || dy) {
-            offsetX += dx / scale;
-            offsetY += dy / scale;
-            redraw();
-        }
+    //     if (dx || dy) {
+    //         offsetX += dx / scale;
+    //         offsetY += dy / scale;
+    //         redraw();
+    //     }
 
-        if (Array.from(keysPressed).some(k => ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "w", "a", "s", "d"].includes(k.toLowerCase()))) {
-            panAnimationId = requestAnimationFrame(performKeyboardPan);
-        } else {
-            panAnimationId = null;
-        }
-    };
+    //     if (Array.from(keysPressed).some(k => ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "w", "a", "s", "d"].includes(k.toLowerCase()))) {
+    //         panAnimationId = requestAnimationFrame(performKeyboardPan);
+    //     } else {
+    //         panAnimationId = null;
+    //     }
+    // };
 
     const handleContextMenu = (e: MouseEvent) => e.preventDefault();
 
