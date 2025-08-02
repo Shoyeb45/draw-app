@@ -30,7 +30,7 @@ export async function createRoom( request: Request, response: Response ) {
         const roomCreated = await prisma.room.create({
             data: {
                 slug: body.slug,
-                adminId: request.user?.id ?? "No id"
+                adminId: request?.id ?? "No id"
             }
         })
 
