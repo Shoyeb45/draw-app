@@ -99,6 +99,7 @@ export function initDraw(
         const finishEditing = () => {
             if (input.value.trim()) {
                 const newShape: Shape = {
+                    id: crypto.randomUUID(),
                     type: "text",
                     x: worldX,
                     y: worldY,
@@ -170,6 +171,8 @@ export function initDraw(
         const endX = screenToWorldX(e.clientX - rect.left, scale);
         const endY = screenToWorldY(e.clientY - rect.top, scale);
 
+        const id = crypto.randomUUID();
+
         if (canvas.style.cursor === "grabbing") {
             canvas.style.cursor = activeShape === "" ? "default" : "crosshair";
             return;
@@ -178,6 +181,7 @@ export function initDraw(
             setShapes((prev) => [
                 ...prev,
                 {
+                    id,
                     type: "rect",
                     x: Math.min(startX, endX),
                     y: Math.min(startY, endY),
@@ -187,6 +191,7 @@ export function initDraw(
             ]);
         } else if (activeShape === "ellipse") {
             const newShape: Shape = {
+                id,
                 type: "ellipse",
                 // Store world coordinates
                 x: startX + (endX - startX) / 2,
@@ -197,6 +202,7 @@ export function initDraw(
             setShapes((prev: Shape[]) => [...prev, newShape]);
         } else if (activeShape === "line") {
             const newShape: Shape = {
+                id,
                 type: "line",
                 startX: startX,
                 startY: startY,
@@ -206,6 +212,7 @@ export function initDraw(
             setShapes((prev: Shape[]) => [...prev, newShape]);
         } else if (activeShape === "arrow") {
             const newShape: Shape = {
+                id,
                 type: "arrow",
                 startX: startX,
                 startY: startY,
@@ -215,6 +222,7 @@ export function initDraw(
             setShapes((prev: Shape[]) => [...prev, newShape]);
         } else if (activeShape === "draw") {
             const newShape: Shape = {
+                id,
                 type: "draw",
                 points: tempPoints
             }
