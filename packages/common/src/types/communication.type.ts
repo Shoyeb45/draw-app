@@ -16,3 +16,8 @@ export type CommunicationMessage = {
     type: "LEAVE_ROOM",
     roomId: string,
 };
+
+export type ClientSideMessage = {
+    type: "INITIALISE",
+    shapes: Shape[]
+}

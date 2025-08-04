@@ -1,8 +1,8 @@
 import { Shape } from "../types/shape.types";
 
 export function performShapeChanges(
-    oldShapes: Shape[],
-    newShapes: Shape[],
+    oldShapes: Shape[] | undefined,
+    newShapes: Shape[] | undefined,
     type: "ADD" | "REMOVE" | "UPDATE"
 ): Shape[] {
     if (!oldShapes || !newShapes) {

@@ -34,7 +34,7 @@ wss.on("connection", (ws, request) => {
             Rooms.getInstance().removeUser(parsedData.roomId, userId);
         } else if (parsedData.type === "CHAT") {
             
-            Rooms.getInstance().brodcastChanges(parsedData.roomId, parsedData.delta);
+            Rooms.getInstance().brodcastChanges(parsedData.roomId, parsedData.delta.shapes, parsedData.delta.type, ws);
         }
     })
 })
