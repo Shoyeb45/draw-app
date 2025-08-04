@@ -1,0 +1,72 @@
+import { Shape } from "@/types/shapeType";
+
+export function getShapesInSelection(
+  shapes: Shape[],
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number
+): Shape[] {
+  return shapes.filter((shape) => {
+    const bounds = getShapeBounds(shape);
+    if (!bounds) return false;
+
+    const { left, top, right, bottom } = bounds;
+    return left >= x1 && top >= y1 && right <= x2 && bottom <= y2;
+  });
+}
+
+function getShapeBounds(shape: Shape) {
+  switch (shape.type) {
+    case "rect":
+      return {
+        left: shape.x,
+        top: shape.y,
+        right: shape.x + shape.width,
+        bottom: shape.y + shape.height,
+      };
+
+    case "ellipse":
+      return {
+        left: shape.x - shape.radiusX,
+        top: shape.y - shape.radiusY,
+        right: shape.x + shape.radiusX,
+        bottom: shape.y + shape.radiusY,
+      };
+
+    case "line":
+    case "arrow":
+      return {
+        left: Math.min(shape.startX, shape.endX),
+        top: Math.min(shape.startY, shape.endY),
+        right: Math.max(shape.startX, shape.endX),
+        bottom: Math.max(shape.startY, shape.endY),
+      };
+
+    case "draw":
+      if (shape.points.length <= 0) return null;
+      const xs = shape.points.map(p => p.x);
+      const ys = shape.points.map(p => p.y);
+      return {
+        left: Math.min(...xs),
+        top: Math.min(...ys),
+        right: Math.max(...xs),
+        bottom: Math.max(...ys),
+      };
+
+    case "text":
+      const fontSize = 16;
+      const avgCharWidth = 8;
+      const textWidth = shape.content.length * avgCharWidth;
+      const textHeight = shape.content.split("\n").length * fontSize;
+      return {
+        left: shape.x,
+        top: shape.y - textHeight,
+        right: shape.x + textWidth,
+        bottom: shape.y,
+      };
+
+    default:
+      return null;
+  }
+}
