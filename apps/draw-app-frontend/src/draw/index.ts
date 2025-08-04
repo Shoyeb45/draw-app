@@ -1,8 +1,7 @@
 import { Shape } from "@/types/shapeType";
 import { initInfiniteCanvas, screenToWorldX, screenToWorldY, applyTransform } from "./infiniteCanvas";
 import { Point } from "@/types/shapeType";
-import { act, PureComponent } from "react";
-import { pid } from "process";
+import { CommunicationMessage } from "@repo/common";
 
 const ARROW_ANGLE = Math.PI / 6;
 const ARROW_LENGTH = 10;
@@ -46,6 +45,23 @@ function drawArrow(
     // ctx.fill(); // Optional: fill the arrowhead
 }
 
+function sendMessageInRoom(changes: Shape[], roomId: string | undefined, ws: WebSocket | undefined, type: "ADD" | "UPDATE" | "REMOVE") {
+    console.log(`room Id: ${roomId}, ws: ${ws}`);
+    
+    if (!ws || !roomId) {
+        console.log("Web socket pr roomId is null, can't send the message");
+        return;
+    }
+    const data: CommunicationMessage = {
+        type: "CHAT",
+        roomId,
+        delta: {
+            type, shapes: changes
+        },
+    };
+
+    ws.send(JSON.stringify(data));
+}
 export function initDraw(
     canvas: HTMLCanvasElement,
     shapes: Shape[],
@@ -55,6 +71,8 @@ export function initDraw(
     setScale: (s: number) => void,
     selectedShapes: Shape[],
     setSelectedShapes: React.Dispatch<React.SetStateAction<Shape[]>>,
+    webSocket?: WebSocket | undefined,
+    roomId?: string
 ) {
 
     const ctx = canvas.getContext("2d");
@@ -105,6 +123,8 @@ export function initDraw(
                     y: worldY,
                     content: input.value,
                 };
+
+                sendMessageInRoom([newShape], roomId, webSocket, "ADD");
                 setShapes((prev) => [...prev, newShape]);
             }
             input.remove();
@@ -121,7 +141,7 @@ export function initDraw(
 
         input.addEventListener("blur", () => {
             // Delay removal to allow click detection
-            setTimeout(finishEditing, 100);
+            // setTimeout(finishEditing, 100);
         });
     };
     const autoResizeTextarea = function (textarea: HTMLTextAreaElement) {
@@ -177,18 +197,21 @@ export function initDraw(
             canvas.style.cursor = activeShape === "" ? "default" : "crosshair";
             return;
         }
+
         if (activeShape === "rect") {
-            setShapes((prev) => [
-                ...prev,
-                {
+            const newShape: Shape = {
                     id,
                     type: "rect",
                     x: Math.min(startX, endX),
                     y: Math.min(startY, endY),
                     width: Math.abs(endX - startX),
                     height: Math.abs(endY - startY),
-                },
+            }; 
+            setShapes((prev) => [
+                ...prev,
+                newShape
             ]);
+            sendMessageInRoom([newShape], roomId, webSocket, "ADD");
         } else if (activeShape === "ellipse") {
             const newShape: Shape = {
                 id,
@@ -200,6 +223,7 @@ export function initDraw(
                 radiusY: Math.abs(endY - startY) / 2,
             };
             setShapes((prev: Shape[]) => [...prev, newShape]);
+            sendMessageInRoom([newShape], roomId, webSocket, "ADD");
         } else if (activeShape === "line") {
             const newShape: Shape = {
                 id,
@@ -210,6 +234,7 @@ export function initDraw(
                 endY: endY
             }
             setShapes((prev: Shape[]) => [...prev, newShape]);
+            sendMessageInRoom([newShape], roomId, webSocket, "ADD");
         } else if (activeShape === "arrow") {
             const newShape: Shape = {
                 id,
@@ -220,6 +245,7 @@ export function initDraw(
                 endY: endY
             }
             setShapes((prev: Shape[]) => [...prev, newShape]);
+            sendMessageInRoom([newShape], roomId, webSocket, "ADD");
         } else if (activeShape === "draw") {
             const newShape: Shape = {
                 id,
@@ -227,6 +253,7 @@ export function initDraw(
                 points: tempPoints
             }
             setShapes((prev: Shape[]) => [...prev, newShape]);
+            sendMessageInRoom([newShape], roomId, webSocket, "ADD");
             tempPoints = [];
         } else {
 

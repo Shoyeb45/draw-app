@@ -23,13 +23,14 @@ type ContextProviderProps = {
     children: ReactNode
 }
 
+
 export const ContextProvider = ({ children }: ContextProviderProps) => {
     const [shapes, setShapes] = useState<Shape[]>([]);
     const [shape, setShape] = useState<string>("");
     const [cursorType, setCursorType] = useState<string>("default");
     const [scale, setScale] = useState<number>(1);
     const [selectedShapes, setSelectedShapes] = useState<Shape[]>([]);
-
+    
     return (
         <Context.Provider value={{ setSelectedShapes, selectedShapes, shapes, setShapes, shape, setShape, cursorType, setCursorType, scale, setScale }}>
             {children}

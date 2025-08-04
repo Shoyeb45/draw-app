@@ -34,6 +34,9 @@ export function Topbar() {
                 setShape("");
                 setCursorType("default");
             }}>Select</button>
+            <button className="bg-yellow-500 p-2 rounded-xl" onClick={(e) => {
+
+            }}>Share</button>
             
 
         </div>
