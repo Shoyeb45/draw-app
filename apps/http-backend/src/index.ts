@@ -5,7 +5,6 @@ const app = createServer();
 
 // Routing
 import { router } from "./routes/index.route";
-import { log } from "console";
 app.use("/api/v1", router);
 
 app.listen(9000, () => {
