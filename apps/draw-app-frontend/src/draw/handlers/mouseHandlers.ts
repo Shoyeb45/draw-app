@@ -2,11 +2,12 @@ import { DrawingState, Shape } from "@/types/shapeType";
 import { screenToWorldX, screenToWorldY } from "../infiniteCanvas";
 import { redraw } from "../rendering/shapeRenderer";
 import { isPanning, isTouchPanning } from "../utils/canvas";
-import { getShapesInSelection } from "../utils/shapeSelection";
+import { getCombinedBounds, getShapesInSelection } from "../utils/shapeSelection";
 import { sendMessageInRoom } from "../utils/websocket";
 import { createShape } from "../utils/shapeCreation";
 import { renderPreview } from "../rendering/previewRenderer";
 import { createTextInput } from "../utils/textInput";
+import { getCursorForHandle, getHandleAtPoint } from "../utils/resizeHandleManager";
 
 
 export function createMouseHandlers(
@@ -17,6 +18,7 @@ export function createMouseHandlers(
   scale: number,
   selectedShapes: Shape[],
   setSelectedShapes: React.Dispatch<React.SetStateAction<Shape[]>>,
+  ctx: CanvasRenderingContext2D,
   webSocket?: WebSocket,
   roomId?: string
 ) {
@@ -80,7 +82,7 @@ export function createMouseHandlers(
       const x2 = Math.max(drawingState.startX, endX);
       const y2 = Math.max(drawingState.startY, endY);
 
-      const selectedShapes = getShapesInSelection(shapes, x1, y1, x2, y2);
+      const selectedShapes = getShapesInSelection(shapes, x1, y1, x2, y2, ctx);
       setSelectedShapes(selectedShapes);
       console.log(selectedShapes);
       redraw(canvas, shapes, scale, selectedShapes);
@@ -88,11 +90,21 @@ export function createMouseHandlers(
   };
 
   const handleMouseMove = (e: MouseEvent) => {
-    if (!drawingState.isDrawing || isPanning() || isTouchPanning()) return;
-    
     const rect = canvas.getBoundingClientRect();
     const currentX = screenToWorldX(e.clientX - rect.left, scale);
     const currentY = screenToWorldY(e.clientY - rect.top, scale);
+    // This is for selected shape
+    if (activeShape === "") {
+      const boundingBox = getCombinedBounds(selectedShapes, ctx);
+      const handle = getHandleAtPoint(boundingBox, {x: currentX, y: currentY })
+      
+      if (handle) {
+        canvas.style.cursor = getCursorForHandle(handle)
+      }
+    }
+    
+    if (!drawingState.isDrawing || isPanning() || isTouchPanning()) return;
+    
 
     redraw(canvas, shapes, scale, selectedShapes);
 
@@ -158,3 +170,5 @@ export function createMouseHandlers(
     handleMouseDoubleClick,
   };
 }
+
+

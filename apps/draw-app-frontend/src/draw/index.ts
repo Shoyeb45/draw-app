@@ -45,6 +45,7 @@ export function initDraw(
     scale,
     selectedShapes,
     setSelectedShapes,
+    ctx,
     webSocket,
     roomId
   );

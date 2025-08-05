@@ -5,10 +5,11 @@ export function getShapesInSelection(
   x1: number,
   y1: number,
   x2: number,
-  y2: number
+  y2: number,
+  ctx: CanvasRenderingContext2D
 ): Shape[] {
   return shapes.filter((shape) => {
-    const bounds = getShapeBounds(shape);
+    const bounds = getShapeBounds(shape, ctx);
     if (!bounds) return false;
 
     const { left, top, right, bottom } = bounds;
@@ -16,7 +17,7 @@ export function getShapesInSelection(
   });
 }
 
-function getShapeBounds(shape: Shape) {
+function getShapeBounds(shape: Shape, ctx: CanvasRenderingContext2D) {
   switch (shape.type) {
     case "rect":
       return {
@@ -56,12 +57,13 @@ function getShapeBounds(shape: Shape) {
 
     case "text":
       const fontSize = 16;
-      const avgCharWidth = 8;
-      const textWidth = shape.content.length * avgCharWidth;
+      // const avgCharWidth = 6;
+      const textWidth = ctx.measureText(shape.content).width;
       const textHeight = shape.content.split("\n").length * fontSize;
+      
       return {
         left: shape.x,
-        top: shape.y - textHeight,
+        top: shape.y+ textHeight,
         right: shape.x + textWidth,
         bottom: shape.y,
       };
@@ -69,4 +71,25 @@ function getShapeBounds(shape: Shape) {
     default:
       return null;
   }
+}
+
+
+export function getCombinedBounds(shapes: Shape[], ctx: CanvasRenderingContext2D) {
+  if (shapes.length === 0) {
+    return { x: 0, y: 0, width: 0, height: 0 };
+  }
+
+  let bounds = shapes.map(shape => getShapeBounds(shape, ctx)).filter((b): b is NonNullable<typeof b> => b !== null);
+
+  const minX = Math.min(...bounds.map(b => b.left));
+  const minY = Math.min(...bounds.map(b => b.top));
+  const maxX = Math.max(...bounds.map(b => b.right));
+  const maxY = Math.max(...bounds.map(b => b.bottom));
+
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX,
+    height: maxY - minY
+  };
 }

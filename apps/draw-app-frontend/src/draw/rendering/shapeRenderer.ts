@@ -2,6 +2,8 @@ import { Shape } from "@/types/shapeType";
 import { applyTransform } from "../infiniteCanvas";
 import { drawFreeHandDrawing } from "../utils/freehand";
 import { drawArrow } from "../utils/arrow";
+import { getCombinedBounds } from "../utils/shapeSelection";
+import { drawSelection } from "./selectionRenderer";
 
 export function renderShape(
   ctx: CanvasRenderingContext2D,
@@ -35,11 +37,14 @@ export function renderShape(
       break;
 
     case "text":
+      
       ctx.font = `16px Cascadia Code, Chalkboard SE, sans-serif`;
       ctx.fillStyle = "white";
       ctx.textAlign = "left";
+      ctx.textBaseline = "bottom";
       ctx.letterSpacing = "2px";
       ctx.textBaseline = "top";
+      
       ctx.fillText(shape.content, shape.x, shape.y);
       break;
   }
@@ -70,7 +75,11 @@ export function redraw(
   // Highlight selected shapes if needed
   if (selectedShapes.length >= 1) {
     // Add selection highlighting logic here
+    drawSelection(ctx, selectedShapes);
   }
 
   ctx.restore();
 }
+
+
+
