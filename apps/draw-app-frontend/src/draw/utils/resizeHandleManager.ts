@@ -1,8 +1,7 @@
 import { Point } from "@/types/shapeType";
+import { BoundType, Direction } from "../index";
 
-type Direction = "nw" | "n" | "ne" | "w" | "e" | "sw" | "s" | "se";
 
-type BoundType = { x: number, y: number, width: number, height: number }
 
 export function getResizeHandles(bounds: BoundType): {
     handle: Direction,

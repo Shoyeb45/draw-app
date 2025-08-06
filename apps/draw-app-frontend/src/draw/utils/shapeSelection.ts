@@ -17,7 +17,7 @@ export function getShapesInSelection(
   });
 }
 
-function getShapeBounds(shape: Shape, ctx: CanvasRenderingContext2D) {
+export function getShapeBounds(shape: Shape, ctx: CanvasRenderingContext2D): { left: number, right: number, top: number, bottom: number } {
   switch (shape.type) {
     case "rect":
       return {
@@ -45,7 +45,7 @@ function getShapeBounds(shape: Shape, ctx: CanvasRenderingContext2D) {
       };
 
     case "draw":
-      if (shape.points.length <= 0) return null;
+      if (shape.points.length <= 0) return {left: 0, right: 0, top: 0, bottom: 0};
       const xs = shape.points.map(p => p.x);
       const ys = shape.points.map(p => p.y);
       return {
@@ -60,16 +60,21 @@ function getShapeBounds(shape: Shape, ctx: CanvasRenderingContext2D) {
       // const avgCharWidth = 6;
       const textWidth = ctx.measureText(shape.content).width;
       const textHeight = shape.content.split("\n").length * fontSize;
-      
+
       return {
         left: shape.x,
-        top: shape.y+ textHeight,
+        top: shape.y + textHeight,
         right: shape.x + textWidth,
         bottom: shape.y,
       };
 
     default:
-      return null;
+      return {
+        left: 0,
+        top: 0,
+        right: 0,
+        bottom: 0
+      };
   }
 }
 

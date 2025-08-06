@@ -5,7 +5,21 @@ import { CommunicationMessage } from "@repo/common";
 import { redraw } from "./rendering/shapeRenderer";
 import { createMouseHandlers } from "./handlers/mouseHandlers";
 
+export type Direction = "nw" | "n" | "ne" | "w" | "e" | "sw" | "s" | "se";
+export type BoundType = { x: number, y: number, width: number, height: number }
+export type interactionState = {
+  mode: "select" | "draw" | "drag" | "resize",
+  isDragging: boolean,
+  isResizing: boolean,
+  originalBounds?: BoundType 
+  resizeHandle?: Direction
+}
 
+export let interactionState: interactionState = {
+  mode: "select",
+  isDragging: false,
+  isResizing: false,
+}
 export function initDraw(
   canvas: HTMLCanvasElement,
   shapes: Shape[],
