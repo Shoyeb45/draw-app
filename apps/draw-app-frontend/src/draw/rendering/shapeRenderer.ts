@@ -75,7 +75,7 @@ export function redraw(
   // Highlight selected shapes if needed
   if (selectedShapes.length >= 1) {
     // Add selection highlighting logic here
-    drawSelection(ctx, selectedShapes);
+    drawSelection(ctx, selectedShapes, scale);
   }
 
   ctx.restore();

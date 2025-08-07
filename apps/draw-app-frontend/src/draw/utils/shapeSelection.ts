@@ -84,7 +84,7 @@ export function getCombinedBounds(shapes: Shape[], ctx: CanvasRenderingContext2D
     return { x: 0, y: 0, width: 0, height: 0 };
   }
 
-  let bounds = shapes.map(shape => getShapeBounds(shape, ctx)).filter((b): b is NonNullable<typeof b> => b !== null);
+  const bounds = shapes.map(shape => getShapeBounds(shape, ctx)).filter((b): b is NonNullable<typeof b> => b !== null);
 
   const minX = Math.min(...bounds.map(b => b.left));
   const minY = Math.min(...bounds.map(b => b.top));

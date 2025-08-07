@@ -1,5 +1,5 @@
-import { Shape } from "@/types/shapeType";
-import { initInfiniteCanvas, screenToWorldX, screenToWorldY, applyTransform } from "./infiniteCanvas";
+import { DrawingState, Shape } from "@/types/shapeType";
+import { initInfiniteCanvas } from "./infiniteCanvas";
 import { Point } from "@/types/shapeType";
 import { CommunicationMessage } from "@repo/common";
 import { redraw } from "./rendering/shapeRenderer";
@@ -15,7 +15,7 @@ export type interactionState = {
   resizeHandle?: Direction
 }
 
-export let interactionState: interactionState = {
+export const interactionState: interactionState = {
   mode: "select",
   isDragging: false,
   isResizing: false,
@@ -29,8 +29,10 @@ export function initDraw(
   setScale: (s: number) => void,
   selectedShapes: Shape[],
   setSelectedShapes: React.Dispatch<React.SetStateAction<Shape[]>>,
+  drawingStateRef: React.MutableRefObject<DrawingState>,
+  selectedShapesRef: React.MutableRefObject<Shape[]>,
   webSocket?: WebSocket | undefined,
-  roomId?: string
+  roomId?: string,
 ) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return () => {};
@@ -60,8 +62,10 @@ export function initDraw(
     selectedShapes,
     setSelectedShapes,
     ctx,
+    drawingStateRef,
+    selectedShapesRef,
     webSocket,
-    roomId
+    roomId,
   );
 
   // Add event listeners

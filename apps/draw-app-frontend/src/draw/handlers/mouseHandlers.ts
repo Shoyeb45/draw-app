@@ -23,28 +23,23 @@ export function createMouseHandlers(
   selectedShapes: Shape[],
   setSelectedShapes: React.Dispatch<React.SetStateAction<Shape[]>>,
   ctx: CanvasRenderingContext2D,
+  drawingStateRef: React.MutableRefObject<DrawingState>,
+  selectedShapesRef: React.MutableRefObject<Shape[]>,
   webSocket?: WebSocket,
-  roomId?: string
+  roomId?: string,
 ) {
-  const drawingState: DrawingState = {
-    isDrawing: false,
-    startX: 0,
-    startY: 0,
-    tempPoints: [],
-  };
 
   const handleMouseDown = (e: MouseEvent) => {
     if (isPanning() || isTouchPanning()) return;
     const rect = canvas.getBoundingClientRect();
-    drawingState.startX = screenToWorldX(e.clientX - rect.left, scale);
-    drawingState.startY = screenToWorldY(e.clientY - rect.top, scale);
+    drawingStateRef.current.startX = screenToWorldX(e.clientX - rect.left, scale);
+    drawingStateRef.current.startY = screenToWorldY(e.clientY - rect.top, scale);
 
-    if (activeShape === "" && selectedShapes.length >= 1) {
-      console.log("Mouse down");
+    if (activeShape === "" && selectedShapes.length >= 1 && !interactionState.isResizing) {
 
       const bounds = getCombinedBounds(selectedShapes, ctx);
       if (bounds) {
-        const handle = getHandleAtPoint(bounds, { x: drawingState.startX, y: drawingState.startY });
+        const handle = getHandleAtPoint(bounds, { x: drawingStateRef.current.startX, y: drawingStateRef.current.startY });
         if (handle) {
           interactionState.isResizing = true;
           interactionState.mode = "resize";
@@ -54,31 +49,31 @@ export function createMouseHandlers(
         }
       }
     }
-    drawingState.isDrawing = true;
+    drawingStateRef.current.isDrawing = true;
 
     if (activeShape === "draw") {
-      drawingState.tempPoints.push({
-        x: drawingState.startX,
-        y: drawingState.startY,
+      drawingStateRef.current.tempPoints.push({
+        x: drawingStateRef.current.startX,
+        y: drawingStateRef.current.startY,
         drag: false,
       });
     }
   };
 
   const handleMouseUp = (e: MouseEvent) => {
-    if (!drawingState.isDrawing) return;
+    if (!interactionState.isResizing && !drawingStateRef.current.isDrawing) return;
 
-    drawingState.isDrawing = false;
+    drawingStateRef.current.isDrawing = false;
     const rect = canvas.getBoundingClientRect();
     const endX = screenToWorldX(e.clientX - rect.left, scale);
     const endY = screenToWorldY(e.clientY - rect.top, scale);
 
-    if (interactionState.isDragging && interactionState.originalBounds) {
-      const deltaX = endX - drawingState.startX;
-      const deltaY = endY - drawingState.startY;
-
+    if (interactionState.isResizing && interactionState.originalBounds) {
+      const deltaX = endX - drawingStateRef.current.startX;
+      const deltaY = endY - drawingStateRef.current.startY;
+    
       const newShapes = resizeShapesPreview(
-        selectedShapes,
+        selectedShapesRef.current,
         interactionState.originalBounds,
         interactionState.resizeHandle!,
         deltaX,
@@ -93,12 +88,14 @@ export function createMouseHandlers(
 
       // Clean up
       setSelectedShapes(newShapes);
+      interactionState.isResizing = false;
+      interactionState.mode = "select";
+      interactionState.originalBounds = undefined;
+      interactionState.resizeHandle = undefined;
+      drawingStateRef.current.isDrawing = false;
+      return;
     }
-    interactionState.isResizing = false;
-    interactionState.mode = "select";
-    interactionState.originalBounds = undefined;
-    interactionState.resizeHandle = undefined;
-    drawingState.isDrawing = false;
+
     if (canvas.style.cursor === "grabbing") {
       canvas.style.cursor = activeShape === "" ? "default" : "crosshair";
       return;
@@ -106,11 +103,11 @@ export function createMouseHandlers(
 
     const newShape = createShape(
       activeShape,
-      drawingState.startX,
-      drawingState.startY,
+      drawingStateRef.current.startX,
+      drawingStateRef.current.startY,
       endX,
       endY,
-      drawingState.tempPoints
+      drawingStateRef.current.tempPoints
     );
 
     if (newShape) {
@@ -118,18 +115,17 @@ export function createMouseHandlers(
       sendMessageInRoom([newShape], roomId, webSocket, "ADD");
 
       if (activeShape === "draw") {
-        drawingState.tempPoints = [];
+        drawingStateRef.current.tempPoints = [];
       }
     } else if (activeShape === "") {
       // Handle selection
-      const x1 = Math.min(drawingState.startX, endX);
-      const y1 = Math.min(drawingState.startY, endY);
-      const x2 = Math.max(drawingState.startX, endX);
-      const y2 = Math.max(drawingState.startY, endY);
+      const x1 = Math.min(drawingStateRef.current.startX, endX);
+      const y1 = Math.min(drawingStateRef.current.startY, endY);
+      const x2 = Math.max(drawingStateRef.current.startX, endX);
+      const y2 = Math.max(drawingStateRef.current.startY, endY);
 
       const selectedShapes = getShapesInSelection(shapes, x1, y1, x2, y2, ctx);
       setSelectedShapes(selectedShapes);
-      console.log(selectedShapes);
       redraw(canvas, shapes, scale, selectedShapes);
     }
   };
@@ -149,9 +145,10 @@ export function createMouseHandlers(
 
     if (interactionState.isResizing) {
 
-      const deltaX = currentX - drawingState.startX;
-      const deltaY = currentY - drawingState.startY;
+      const deltaX = currentX - drawingStateRef.current.startX;
+      const deltaY = currentY - drawingStateRef.current.startY;
       if (interactionState.resizeHandle) {
+
         const newShapes = resizeShapesPreview(
           selectedShapes,
           interactionState.originalBounds!,
@@ -160,17 +157,17 @@ export function createMouseHandlers(
           deltaY,
           ctx
         );
+        // Optional: Highlight bounding box and handles again
         redraw(canvas, [
           ...shapes.filter(s => !selectedShapes.some(sel => sel.id === s.id)),
           ...newShapes,
-        ], scale, []);
-        // Optional: Highlight bounding box and handles again
-        drawSelection(ctx, selectedShapes);
+        ], scale, newShapes);
+        
       }
 
     }
 
-    if (!drawingState.isDrawing || isPanning() || isTouchPanning()) return;
+    if (!drawingStateRef.current.isDrawing || isPanning() || isTouchPanning()) return;
 
 
     redraw(canvas, shapes, scale, selectedShapes);
@@ -178,7 +175,7 @@ export function createMouseHandlers(
     if (canvas.style.cursor === "grabbing") return;
 
     if (activeShape === "draw") {
-      drawingState.tempPoints.push({
+      drawingStateRef.current.tempPoints.push({
         x: currentX,
         y: currentY,
         drag: true
@@ -188,16 +185,17 @@ export function createMouseHandlers(
     renderPreview(
       canvas.getContext("2d")!,
       activeShape,
-      drawingState.startX,
-      drawingState.startY,
+      drawingStateRef.current.startX,
+      drawingStateRef.current.startY,
       currentX,
       currentY,
       scale,
-      drawingState.tempPoints
+      drawingStateRef.current.tempPoints
     );
   };
 
   const handleMouseClick = (e: MouseEvent) => {
+
     if (activeShape === "text") {
       createTextInput(canvas, e.clientX, e.clientY, scale, (content, worldX, worldY) => {
         const newShape: Shape = {

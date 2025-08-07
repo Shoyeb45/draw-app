@@ -1,6 +1,7 @@
 import { Shape } from "@/types/shapeType";
 import { BoundType, Direction, interactionState } from "..";
 import { getShapeBounds } from "./shapeSelection";
+import { log } from "util";
 
 export function handleResize(handle: Direction, deltaX: number, deltaY: number, selectedShapes: Shape[], ctx: CanvasRenderingContext2D, setShapes: React.Dispatch<React.SetStateAction<Shape[]>>) {
     if (!interactionState.originalBounds || selectedShapes.length <= 0) {
@@ -21,8 +22,8 @@ export function handleResize(handle: Direction, deltaX: number, deltaY: number, 
 }
 
 export function resizeShape(shape: Shape, handle: Direction, deltaX: number, deltaY: number, ctx: CanvasRenderingContext2D) {
-    let bounds = getShapeBounds(shape, ctx);
-    let temp: BoundType = {
+    const bounds = getShapeBounds(shape, ctx);
+    const temp: BoundType = {
         x: bounds?.left,
         y: bounds?.bottom,
         width: bounds?.right - bounds?.left,
@@ -88,6 +89,7 @@ export function calculateNewBounds(bounds: BoundType, handle: Direction, deltaX:
 
 
 export function applyBoundsToShape(shape: Shape, bounds: BoundType, ctx: CanvasRenderingContext2D) {
+    
     switch (shape.type) {
         case "rect":
             return {
@@ -121,7 +123,7 @@ export function applyBoundsToShape(shape: Shape, bounds: BoundType, ctx: CanvasR
 
 function scaleShape(shape: Shape, newBounds: BoundType, ctx: CanvasRenderingContext2D) {
     const temp = getShapeBounds(shape, ctx);
-    let currentBounds = {
+    const currentBounds = {
         x: temp.left, y: temp.bottom, width: temp.right - temp.left, height: temp.top - temp.bottom
     } 
     if (currentBounds.width === 0 || currentBounds.height === 0) {
