@@ -3,6 +3,7 @@ import { getResizeHandles } from "../utils/resizeHandleManager";
 import { getCombinedBounds } from "../utils/shapeSelection";
 
 export function drawSelection(ctx: CanvasRenderingContext2D, selectedShapes: Shape[], scale: number) {
+  console.log(selectedShapes);
   
   const bounds = getCombinedBounds(selectedShapes, ctx);
   ctx.strokeStyle = '#0066cc';
@@ -21,4 +22,5 @@ export function drawSelection(ctx: CanvasRenderingContext2D, selectedShapes: Sha
     ctx.lineWidth = 1 / scale;
     ctx.strokeRect(x - 4, y - 4, 8, 8);
   });
+  ctx.save();
 }

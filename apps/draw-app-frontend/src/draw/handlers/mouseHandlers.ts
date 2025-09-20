@@ -12,6 +12,7 @@ import { interactionState } from "..";
 import { handleResize } from "../utils/resize";
 import { resizeShapesPreview } from "../rendering/resizePreview";
 import { drawSelection } from "../rendering/selectionRenderer";
+import { HitTester } from "../utils/hitTest";
 
 
 export function createMouseHandlers(
@@ -71,7 +72,7 @@ export function createMouseHandlers(
     if (interactionState.isResizing && interactionState.originalBounds) {
       const deltaX = endX - drawingStateRef.current.startX;
       const deltaY = endY - drawingStateRef.current.startY;
-    
+
       const newShapes = resizeShapesPreview(
         selectedShapesRef.current,
         interactionState.originalBounds,
@@ -118,15 +119,24 @@ export function createMouseHandlers(
         drawingStateRef.current.tempPoints = [];
       }
     } else if (activeShape === "") {
-      // Handle selection
-      const x1 = Math.min(drawingStateRef.current.startX, endX);
-      const y1 = Math.min(drawingStateRef.current.startY, endY);
-      const x2 = Math.max(drawingStateRef.current.startX, endX);
-      const y2 = Math.max(drawingStateRef.current.startY, endY);
+      // Handle selection and click 
+      const hitShape = shapes.find(shape => HitTester.hitTestShape(shape, { x: endX, y: endY }, ctx));
 
-      const selectedShapes = getShapesInSelection(shapes, x1, y1, x2, y2, ctx);
-      setSelectedShapes(selectedShapes);
-      redraw(canvas, shapes, scale, selectedShapes);
+      if (hitShape) {
+        // Select single shape
+        setSelectedShapes([hitShape]);
+        redraw(canvas, shapes, scale, [hitShape]);
+      } else {
+        // Clicked empty space → deselect
+        const x1 = Math.min(drawingStateRef.current.startX, endX);
+        const y1 = Math.min(drawingStateRef.current.startY, endY);
+        const x2 = Math.max(drawingStateRef.current.startX, endX);
+        const y2 = Math.max(drawingStateRef.current.startY, endY);
+  
+        const selectedShapes = getShapesInSelection(shapes, x1, y1, x2, y2, ctx);
+        setSelectedShapes(selectedShapes);
+        redraw(canvas, shapes, scale, selectedShapes);
+      }
     }
   };
 
@@ -134,14 +144,26 @@ export function createMouseHandlers(
     const rect = canvas.getBoundingClientRect();
     const currentX = screenToWorldX(e.clientX - rect.left, scale);
     const currentY = screenToWorldY(e.clientY - rect.top, scale);
-    // This is for selected shape
-    const boundingBox = getCombinedBounds(selectedShapes, ctx);
-    const handle = getHandleAtPoint(boundingBox, { x: currentX, y: currentY })
+
     if (activeShape === "") {
+      canvas.style.cursor = "default";
+    }
+    if (!interactionState.isResizing && activeShape === "") {
+      const hitShape = shapes.find(shape => HitTester.hitTestShape(shape, { x: currentX, y: currentY }, ctx));
+
+      if (hitShape) {
+        canvas.style.cursor = "move"; // or "grab"
+      }
+    }
+    // This is for selected shape
+    if (activeShape === "" && selectedShapes.length > 0) {
+      const boundingBox = getCombinedBounds(selectedShapes, ctx);
+      const handle = getHandleAtPoint(boundingBox, { x: currentX, y: currentY })
       if (handle) {
         canvas.style.cursor = getCursorForHandle(handle)
       }
     }
+
 
     if (interactionState.isResizing) {
 
@@ -162,7 +184,7 @@ export function createMouseHandlers(
           ...shapes.filter(s => !selectedShapes.some(sel => sel.id === s.id)),
           ...newShapes,
         ], scale, newShapes);
-        
+
       }
 
     }

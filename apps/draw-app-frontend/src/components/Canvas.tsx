@@ -58,10 +58,8 @@ export function Canvas({ roomId }: { roomId?: string }) {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        console.log(shapes);
 
         // Set up WebSocket connection
-        console.log(roomId);
         if (roomId && !webSocket) {
 
             const ws = new WebSocket(`ws://localhost:8080`);
